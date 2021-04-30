@@ -1,0 +1,256 @@
+﻿@page "/"
+@*SessionStorage component*@
+@inject ProtectedSessionStorage protectedSessionStore
+
+<h1>DataGrid</h1>
+
+Welcome to Data Grid Example Project
+
+
+<div class="row">
+    <div id="example_wrapper" class="dataTables_wrapper container-fluid dt-bootstrap4">
+        <div class="row">
+            <div class="col-sm-12 col-md-6">
+                <div class="dataTables_length" id="example_length">
+                    <label>
+                        Show
+                        <select name="example_length" aria-controls="example" class="form-control form-control-sm">
+                            <option value="5">5</option>
+                            <option value="10">10</option>
+                            <option value="25">25</option>
+                            <option value="-1">All</option>
+                        </select> entries
+                    </label>
+                </div>
+            </div>
+            <div class="col-sm-12 col-md-6">
+                <div id="example_filter" class="dataTables_filter">
+                    <label>
+                        Search:
+                        <input type="search" class="form-control form-control-sm" placeholder="" aria-controls="example">
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-12">
+                <table id="example" class="table table-striped table-bordered dataTable" style="width:100%" role="grid" aria-describedby="example_info">
+                    <thead>
+                        <tr role="row">
+                            <th class="sorting" tabindex="0" aria-controls="example" rowspan="1" colspan="1" activate to sort column ascending" style="width: 55px;">Id</th>
+                            <th class="sorting" tabindex="0" aria-controls="example" rowspan="1" colspan="1" activate to sort column ascending" style="width: 200px;">Name</th>
+                            <th class="sorting" tabindex="0" aria-controls="example" rowspan="1" colspan="1" activate to sort column ascending" style="width: 48px;">Email</th>
+                            <th class="sorting" tabindex="0" aria-controls="example" rowspan="1" colspan="1" activate to sort column ascending" style="width: 125px;">Phone</th>
+                            <th class="sorting" tabindex="0" aria-controls="example" rowspan="1" colspan="1" activate to sort column ascending" style="width: 138px;">Address</th>
+                            <th class="sorting" tabindex="0" aria-controls="example" rowspan="1" colspan="1" activate to sort column ascending" style="width: 125px;">Post Code</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+
+                        @foreach (var item in pageList)
+                        {
+                            <tr role="row" class="even">
+                                <td>@item.Id</td>
+                                <td>@item.Name</td>
+                                <td>@item.Email</td>
+                                <td>@item.Phone</td>
+                                <td>@item.Address</td>
+                                <td>@item.PostCode</td>
+                            </tr>
+
+                        }
+
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-12 col-md-5">
+                <div class="dataTables_info" id="example_info" role="status" aria-live="polite">Showing 1 to @totalPage of @listCount entries</div>
+            </div>
+            <div class="col-sm-12 col-md-7">
+                <div class="dataTables_paginate paging_simple_numbers" id="example_paginate">
+                    <ul class="pagination">
+                        @if (currentPage > 1)
+                        {
+                            <li class="paginate_button page-item ">
+                                <a href="#" @onclick="MoveFirstPage" aria-controls="example" data-dt-idx="2" tabindex="0" class="page-link">First Page</a>
+                            </li>
+                            <li class="paginate_button page-item " id="example_next">
+                                <a href="#" @onclick="MoveNextPrevious" aria-controls="example" data-dt-idx="8" tabindex="0" class=" page-link">&#171; &#8249;</a>
+                            </li>
+                            @if (currentPage > 2)
+                            {
+                                <li class="paginate_button page-item ">
+                                    <a href="#" @onclick="() => MoveXPage(currentPage - 2)" aria-controls="example" data-dt-idx="2" tabindex="0" class="page-link">@(currentPage-2)</a>
+                                </li>
+                            }
+                            <li class="paginate_button page-item ">
+                                <a href="#" @onclick="() => MoveXPage(currentPage - 1)" aria-controls="example" data-dt-idx="2" tabindex="0" class="page-link">@(currentPage-1)</a>
+                            </li>
+                        }
+                        <li class="paginate_button page-item active">
+                            <a href="#" aria-controls="example" data-dt-idx="1" tabindex="0" class="btn page-link">@currentPage</a>
+                        </li>
+
+                        @if (currentPage != totalPage)
+                        {
+                            <li class="paginate_button page-item ">
+                                <a href="#" @onclick="() => MoveXPage(currentPage + 1)" aria-controls="example" data-dt-idx="7" tabindex="0" class="page-link">@(currentPage+1)</a>
+                            </li>
+                            @if ((totalPage - 1) > currentPage)
+                            {
+                                <li class="paginate_button page-item ">
+                                    <a href="#" @onclick="() => MoveXPage(currentPage +2)" aria-controls="example" data-dt-idx="7" tabindex="0" class="page-link">@(currentPage+2)</a>
+                                </li>
+                            }
+                            <li class="paginate_button page-item " id="example_next">
+                                <a href="#" @onclick="MoveNextPage" aria-controls="example" data-dt-idx="8" tabindex="0" class=" page-link">&#8250; &#187;</a>
+                            </li>
+                            <li class="paginate_button page-item ">
+                                <a href="#" @onclick="MoveLastPage" aria-controls="example" data-dt-idx="2" tabindex="0" class="page-link">Last Page</a>
+                            </li>
+                        }
+
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code{
+
+    public bool Initialized { get; set; }
+    int listCount { get; set; }
+    int onePageSize { get; set; }
+    int currentPage { get; set; }
+    int firstIndex { get; set; }
+    int lastIndex { get; set; }
+    int totalPage { get; set; }
+    List<FakeDataModel> pageList { get; set; }
+
+
+    //SessionStorage Method
+    #region SessionStorage
+
+    //private async Task CurrentPage()
+    //{
+
+    //    await protectedSessionStore.SetAsync("page", currentPage);
+    //}
+    ////Calling LocalStorage
+    //protected override async Task OnAfterRenderAsync(bool firstRender)
+    //{
+    //    if (firstRender)
+    //    {
+    //        await LoadStateAsync();
+
+    //    }
+    //}
+    //private async Task LoadStateAsync()
+    //{
+    //    var storePage = await protectedSessionStore.GetAsync<int>("page");
+    //    currentPage = Convert.ToInt32(storePage);
+    //}
+    #endregion
+
+    protected override async Task OnInitializedAsync()
+    {
+        firstIndex = 0;
+        onePageSize = 10;
+        listCount = FakeDatas.model.Count();
+        currentPage = 1;
+        totalPage = (int)Math.Ceiling((decimal)listCount / (decimal)onePageSize);
+        pageList = GetList(FakeDatas.model, firstIndex, onePageSize);
+    }
+
+
+
+    //find list print to table
+    public List<FakeDataModel> GetList(List<FakeDataModel> list, int firstIndex, int onePage)
+    {
+        return FakeDatas.model.GetRange(firstIndex, onePage);
+    }
+
+
+    public void MoveNextPage()
+    {
+        firstIndex = currentPage * onePageSize;
+
+        if ((listCount - firstIndex) < onePageSize && totalPage > currentPage)
+        {
+            MoveLastPage();
+        }
+        else if (totalPage > currentPage)
+        {
+            pageList = GetList(FakeDatas.model, firstIndex, onePageSize);
+            currentPage = currentPage + 1;
+            // CurrentPage();
+        }
+
+    }
+
+    public void MoveNextPrevious()
+    {
+
+        if (currentPage > 1)
+        {
+            currentPage--;
+            firstIndex = (currentPage - 1) * onePageSize;
+
+            pageList = GetList(FakeDatas.model, firstIndex, onePageSize);
+            //CurrentPage();
+        }
+
+    }
+
+    public void MoveXPage(int page)
+    {
+
+        if (page == totalPage)
+        {
+            MoveLastPage();
+        }
+        else if (page == 1)
+        {
+            MoveFirstPage();
+        }
+        else
+        {
+            firstIndex = (page - 1) * onePageSize;
+            currentPage = page;
+            pageList = GetList(FakeDatas.model, firstIndex, onePageSize);
+            //CurrentPage();
+
+        }
+
+    }
+
+    public void MoveLastPage()
+    {
+        if (totalPage != currentPage)
+        {
+            int size = (listCount - (onePageSize * (totalPage - 1)));
+            pageList = GetList(FakeDatas.model, firstIndex, size);
+            currentPage = totalPage;
+            //CurrentPage();
+        }
+
+    }
+    public void MoveFirstPage()
+    {
+        if (currentPage != 1)
+        {
+            firstIndex = 0;
+            currentPage = 1;
+            pageList = GetList(FakeDatas.model, firstIndex, onePageSize);
+            // CurrentPage();
+        }
+
+    }
+}
