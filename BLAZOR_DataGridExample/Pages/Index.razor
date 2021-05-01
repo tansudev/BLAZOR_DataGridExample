@@ -27,7 +27,7 @@ Welcome to Data Grid Example Project
                 <div id="example_filter" class="dataTables_filter">
                     <label>
                         Search:
-                        <input type="search" class="form-control form-control-sm" placeholder="" aria-controls="example">
+                        <input @oninput="OnSearchChanged" value="@search" type="search" class="form-control form-control-sm" placeholder="Arama..." aria-controls="example">
                     </label>
                 </div>
             </div>
@@ -81,7 +81,7 @@ Welcome to Data Grid Example Project
                                 <a href="#" @onclick="MoveFirstPage" aria-controls="example" data-dt-idx="2" tabindex="0" class="page-link">First Page</a>
                             </li>
                             <li class="paginate_button page-item " id="example_next">
-                                <a href="#" @onclick="MoveNextPrevious" aria-controls="example" data-dt-idx="8" tabindex="0" class=" page-link">&#171; &#8249;</a>
+                                <a href="#" @onclick="() =>MoveXPage(currentPage-1)" aria-controls="example" data-dt-idx="8" tabindex="0" class=" page-link">&#171; &#8249;</a>
                             </li>
                             @if (currentPage > 2)
                             {
@@ -97,19 +97,19 @@ Welcome to Data Grid Example Project
                             <a href="#" aria-controls="example" data-dt-idx="1" tabindex="0" class="btn page-link">@currentPage</a>
                         </li>
 
-                        @if (currentPage != totalPage)
+                        @if ((totalPage) > currentPage)
                         {
                             <li class="paginate_button page-item ">
                                 <a href="#" @onclick="() => MoveXPage(currentPage + 1)" aria-controls="example" data-dt-idx="7" tabindex="0" class="page-link">@(currentPage+1)</a>
                             </li>
-                            @if ((totalPage - 1) > currentPage)
+                            @if ((totalPage-1) > currentPage)
                             {
                                 <li class="paginate_button page-item ">
                                     <a href="#" @onclick="() => MoveXPage(currentPage +2)" aria-controls="example" data-dt-idx="7" tabindex="0" class="page-link">@(currentPage+2)</a>
                                 </li>
                             }
                             <li class="paginate_button page-item " id="example_next">
-                                <a href="#" @onclick="MoveNextPage" aria-controls="example" data-dt-idx="8" tabindex="0" class=" page-link">&#8250; &#187;</a>
+                                <a href="#" @onclick="() =>MoveXPage(currentPage+1)" aria-controls="example" data-dt-idx="8" tabindex="0" class=" page-link">&#8250; &#187;</a>
                             </li>
                             <li class="paginate_button page-item ">
                                 <a href="#" @onclick="MoveLastPage" aria-controls="example" data-dt-idx="2" tabindex="0" class="page-link">Last Page</a>
@@ -123,16 +123,20 @@ Welcome to Data Grid Example Project
     </div>
 </div>
 
-@code{
+@code
+{
 
     public bool Initialized { get; set; }
     int listCount { get; set; }
-    int onePageSize { get; set; }
+    int APageSize { get; set; }
     int currentPage { get; set; }
     int firstIndex { get; set; }
     int lastIndex { get; set; }
     int totalPage { get; set; }
+    string search { get; set; }
+    bool IsSucces { get; set; }
     List<FakeDataModel> pageList { get; set; }
+    List<FakeDataModel> AllData { get; set; }
 
 
     //SessionStorage Method
@@ -162,95 +166,75 @@ Welcome to Data Grid Example Project
     protected override async Task OnInitializedAsync()
     {
         firstIndex = 0;
-        onePageSize = 10;
+        APageSize = 10;
         listCount = FakeDatas.model.Count();
         currentPage = 1;
-        totalPage = (int)Math.Ceiling((decimal)listCount / (decimal)onePageSize);
-        pageList = GetList(FakeDatas.model, firstIndex, onePageSize);
+        totalPage = (int)Math.Ceiling((decimal)listCount / (decimal)APageSize);
+        AllData = FakeDatas.model;
+        GetList(AllData, currentPage,firstIndex, APageSize);
     }
-
-
 
     //find list print to table
-    public List<FakeDataModel> GetList(List<FakeDataModel> list, int firstIndex, int onePage)
+    public bool GetList(List<FakeDataModel> list,int crrntPage ,int frstIndex, int onePage)
     {
-        return FakeDatas.model.GetRange(firstIndex, onePage);
+        listCount = list.Count();
+        if (listCount >0)
+        {
+            totalPage = (int)Math.Ceiling((decimal)listCount / (decimal)onePage);
+        }
+        else
+        {
+            currentPage = 1;
+            firstIndex = 0;
+            totalPage = 0;
+            pageList = list.GetRange(firstIndex,0);
+        }
+
+        if (crrntPage == totalPage)
+        {
+            int size = listCount % onePage;
+            firstIndex = onePage * (crrntPage - 1);
+            pageList = list.GetRange(firstIndex, size);
+            return true;
+        }
+        else if (crrntPage <totalPage)
+        {
+            firstIndex = onePage * (crrntPage - 1);
+            pageList = list.GetRange(firstIndex, onePage);
+            return true;
+        }
+        else
+        {
+            return false;
+        }
     }
 
-
-    public void MoveNextPage()
+    private void OnSearchChanged(ChangeEventArgs e)
     {
-        firstIndex = currentPage * onePageSize;
+        currentPage = 1;
+        search = e.Value.ToString();
 
-        if ((listCount - firstIndex) < onePageSize && totalPage > currentPage)
-        {
-            MoveLastPage();
-        }
-        else if (totalPage > currentPage)
-        {
-            pageList = GetList(FakeDatas.model, firstIndex, onePageSize);
-            currentPage = currentPage + 1;
-            // CurrentPage();
-        }
+        AllData = FakeDatas.model.FindAll(x => x.Name.Contains(search));
 
-    }
-
-    public void MoveNextPrevious()
-    {
-
-        if (currentPage > 1)
-        {
-            currentPage--;
-            firstIndex = (currentPage - 1) * onePageSize;
-
-            pageList = GetList(FakeDatas.model, firstIndex, onePageSize);
-            //CurrentPage();
-        }
-
+        GetList(AllData, currentPage, firstIndex, APageSize);
     }
 
     public void MoveXPage(int page)
     {
-
-        if (page == totalPage)
-        {
-            MoveLastPage();
-        }
-        else if (page == 1)
-        {
-            MoveFirstPage();
-        }
-        else
-        {
-            firstIndex = (page - 1) * onePageSize;
-            currentPage = page;
-            pageList = GetList(FakeDatas.model, firstIndex, onePageSize);
-            //CurrentPage();
-
-        }
+        currentPage = page;
+        IsSucces = GetList(AllData,page ,firstIndex, APageSize);
 
     }
 
     public void MoveLastPage()
     {
-        if (totalPage != currentPage)
-        {
-            int size = (listCount - (onePageSize * (totalPage - 1)));
-            pageList = GetList(FakeDatas.model, firstIndex, size);
-            currentPage = totalPage;
-            //CurrentPage();
-        }
+        currentPage = totalPage;
+        IsSucces = GetList(AllData,currentPage,firstIndex, APageSize);
 
     }
     public void MoveFirstPage()
     {
-        if (currentPage != 1)
-        {
-            firstIndex = 0;
-            currentPage = 1;
-            pageList = GetList(FakeDatas.model, firstIndex, onePageSize);
-            // CurrentPage();
-        }
-
+        currentPage = 1;
+        IsSucces = GetList(AllData,currentPage ,firstIndex, APageSize);
     }
 }

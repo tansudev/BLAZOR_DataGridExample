@@ -30,7 +30,7 @@ namespace BLAZOR_DataGridExample
             services.AddRazorPages();
             services.AddServerSideBlazor();
             services.AddSingleton<WeatherForecastService>();
-            services.AddProtectedBrowserStorage();
+            //services.AddProtectedBrowserStorage();
 
         }
 
